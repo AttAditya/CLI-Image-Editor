@@ -221,6 +221,26 @@ class ImageEditor {
         return resultMatrix;
     }
 
+    static int[][] colorInverseMatrix(int[][] matrix) {
+        int[][] resultMatrix = new int[matrix.length][matrix[0].length];
+
+        for (int x = 0; x < matrix[0].length; x++) {
+            for (int y = 0; y < matrix.length; y++) {
+                Color currentColor = new Color(matrix[y][x]);
+
+                int rValue = 255 - currentColor.getRed();
+                int gValue = 255 - currentColor.getGreen();
+                int bValue = 255 - currentColor.getBlue();
+
+                Color updatedColor = new Color(limitColor0To255(rValue), limitColor0To255(gValue), limitColor0To255(bValue));
+
+                resultMatrix[y][x] = updatedColor.getRGB();
+            }
+        }
+
+        return resultMatrix;
+    }
+
     static int[][] blurMatrix(int[][] matrix, int blurRadius) {
         int[][] resultMatrix = new int[matrix.length][matrix[0].length];
 
@@ -354,6 +374,7 @@ class ImageEditor {
                 System.out.println("(8)\tPixelate");
                 System.out.println("(9)\tCrop to circle");
                 System.out.println("(10)\tContrast");
+                System.out.println("(11)\tColor Inversion");
 
                 System.out.println();
                 System.out.print("Option: ");
@@ -438,8 +459,14 @@ class ImageEditor {
                         ImageIO.write(matrixToBufferedImage(imageMatrix), "jpg", outputFile);
 
                         break;
+                    case 11:
+                        imageMatrix = colorInverseMatrix(imageMatrix);
+                        ImageIO.write(matrixToBufferedImage(imageMatrix), "jpg", outputFile);
+
+                        break;
                     default:
                         System.out.println("Option invalid!");
+                        
                         break;
                 }
             } catch (IOException err) {
