@@ -241,6 +241,44 @@ class ImageEditor {
         return resultMatrix;
     }
 
+    static int[][] binaryColorMatrix(int[][] matrix, double tolerance) {
+        int[][] resultMatrix = new int[matrix.length][matrix[0].length];
+
+        for (int x = 0; x < matrix[0].length; x++) {
+            for (int y = 0; y < matrix.length; y++) {
+                Color currentColor = new Color(matrix[y][x]);
+
+                int rValue = currentColor.getRed();
+                int gValue = currentColor.getGreen();
+                int bValue = currentColor.getBlue();
+
+                if (rValue > 255 * (1 - tolerance)) {
+                    rValue = 255;
+                } else {
+                    rValue = 0;
+                }
+                
+                if (gValue > 255 * (1 - tolerance)) {
+                    gValue = 255;
+                } else {
+                    gValue = 0;
+                }
+
+                if (bValue > 255 * (1 - tolerance)) {
+                    bValue = 255;
+                } else {
+                    bValue = 0;
+                }
+
+                Color updatedColor = new Color(limitColor0To255(rValue), limitColor0To255(gValue), limitColor0To255(bValue));
+
+                resultMatrix[y][x] = updatedColor.getRGB();
+            }
+        }
+
+        return resultMatrix;
+    }
+
     static int[][] blurMatrix(int[][] matrix, int blurRadius) {
         int[][] resultMatrix = new int[matrix.length][matrix[0].length];
 
@@ -285,6 +323,80 @@ class ImageEditor {
                 int BMean = (int) matrixMean(BMatrix);
 
                 Color updatedColor = new Color(RMean, GMean, BMean);
+
+                resultMatrix[y][x] = updatedColor.getRGB();
+            }
+        }
+
+        return resultMatrix;
+    }
+
+    static int[][] edgeDetectMatrix(int[][] matrix, int edgeWidth) {
+        int[][] resultMatrix = new int[matrix.length][matrix[0].length];
+
+        for (int x = 0; x < matrix[0].length - edgeWidth; x++) {
+            for (int y = 0; y < matrix.length - edgeWidth; y++) {
+                Color currentColor = new Color(matrix[y][x]);
+                Color ShiftedColor = new Color(matrix[y + edgeWidth][x + edgeWidth]);
+
+                int rValue = currentColor.getRed() - ShiftedColor.getRed();
+                int gValue = currentColor.getGreen() - ShiftedColor.getGreen();
+                int bValue = currentColor.getBlue() - ShiftedColor.getBlue();
+
+                Color updatedColor = new Color(limitColor0To255(rValue), limitColor0To255(gValue), limitColor0To255(bValue));
+
+                resultMatrix[y][x] = updatedColor.getRGB();
+            }
+        }
+
+        return resultMatrix;
+    }
+
+    static int[][] edgeDetectMatrixV2(int[][] matrix, int edgeWidth) {
+        int[][] resultMatrix = new int[matrix.length][matrix[0].length];
+        int[][] resultMatrix1 = new int[matrix.length][matrix[0].length];
+        int[][] resultMatrix2 = new int[matrix.length][matrix[0].length];
+
+        for (int x = 0; x < matrix[0].length - edgeWidth; x++) {
+            for (int y = 0; y < matrix.length - edgeWidth; y++) {
+                Color currentColor = new Color(matrix[y][x]);
+                Color ShiftedColor = new Color(matrix[y + edgeWidth][x + edgeWidth]);
+
+                int rValue = currentColor.getRed() - ShiftedColor.getRed();
+                int gValue = currentColor.getGreen() - ShiftedColor.getGreen();
+                int bValue = currentColor.getBlue() - ShiftedColor.getBlue();
+
+                Color updatedColor = new Color(limitColor0To255(rValue), limitColor0To255(gValue), limitColor0To255(bValue));
+
+                resultMatrix1[y][x] = updatedColor.getRGB();
+            }
+        }
+
+        for (int x = edgeWidth; x < matrix[0].length; x++) {
+            for (int y = edgeWidth; y < matrix.length - edgeWidth; y++) {
+                Color currentColor = new Color(matrix[y][x]);
+                Color ShiftedColor = new Color(matrix[y - edgeWidth][x - edgeWidth]);
+
+                int rValue = currentColor.getRed() - ShiftedColor.getRed();
+                int gValue = currentColor.getGreen() - ShiftedColor.getGreen();
+                int bValue = currentColor.getBlue() - ShiftedColor.getBlue();
+
+                Color updatedColor = new Color(limitColor0To255(rValue), limitColor0To255(gValue), limitColor0To255(bValue));
+
+                resultMatrix2[y][x] = updatedColor.getRGB();
+            }
+        }
+
+        for (int x = 0; x < matrix[0].length; x++) {
+            for (int y = 0; y < matrix.length; y++) {
+                Color matrix1Color = new Color(resultMatrix1[y][x]);
+                Color matrix2Color = new Color(resultMatrix2[y][x]);
+
+                int rValue = matrix1Color.getRed() + matrix2Color.getRed();
+                int gValue = matrix1Color.getGreen() + matrix2Color.getGreen();
+                int bValue = matrix1Color.getBlue() + matrix2Color.getBlue();
+
+                Color updatedColor = new Color(limitColor0To255(rValue), limitColor0To255(gValue), limitColor0To255(bValue));
 
                 resultMatrix[y][x] = updatedColor.getRGB();
             }
@@ -375,6 +487,8 @@ class ImageEditor {
                 System.out.println("(9)\tCrop to circle");
                 System.out.println("(10)\tContrast");
                 System.out.println("(11)\tColor Inversion");
+                System.out.println("(12)\tEdge Detection");
+                System.out.println("(13)\tSketch");
 
                 System.out.println();
                 System.out.print("Option: ");
@@ -461,6 +575,33 @@ class ImageEditor {
                         break;
                     case 11:
                         imageMatrix = colorInverseMatrix(imageMatrix);
+                        ImageIO.write(matrixToBufferedImage(imageMatrix), "jpg", outputFile);
+
+                        break;
+                    case 12:
+                        imageMatrix = edgeDetectMatrix(imageMatrix, 5);
+                        ImageIO.write(matrixToBufferedImage(imageMatrix), "jpg", outputFile);
+
+                        break;
+                    case 13:
+                        // System.out.print("Stroke Amount(in pixels): ");
+                        // int stroke = sc.nextInt();
+                        // sc.nextLine();
+
+                        // System.out.print("Tolerance Amount(in 0.0 -> 1.0 range): ");
+                        // double tolerance = sc.nextDouble();
+                        // sc.nextLine();
+
+                        int stroke = 2;
+                        double tolerance = 0.97;
+
+                        buffImage = grayscale(buffImage);
+                        
+                        imageMatrix = imageToMatrix(buffImage);
+                        imageMatrix = edgeDetectMatrix(imageMatrix, stroke);
+                        imageMatrix = binaryColorMatrix(imageMatrix, tolerance);
+                        imageMatrix = colorInverseMatrix(imageMatrix);
+
                         ImageIO.write(matrixToBufferedImage(imageMatrix), "jpg", outputFile);
 
                         break;
