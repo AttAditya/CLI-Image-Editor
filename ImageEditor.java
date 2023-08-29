@@ -251,6 +251,12 @@ class ImageEditor {
     }
 
     static int[][] rotateMatrix(int[][] matrix, int angle) {
+        angle = angle % 360;
+
+        if (angle < 0) {
+            angle += 360;
+        }
+
         double sinAngle = Math.sin(angle * Math.PI / 180);
         double cosAngle = Math.cos(angle * Math.PI / 180);
 
@@ -266,9 +272,19 @@ class ImageEditor {
         int cornerBRX = rotateCoordinate(matrix[0].length - 1, matrix.length - 1, sinAngle, cosAngle)[0];
         int cornerBRY = rotateCoordinate(matrix[0].length - 1, matrix.length - 1, sinAngle, cosAngle)[1];
 
-        int xOffset = -cornerBLX;
+        int[] xCoords = {cornerBLX, cornerTLX, cornerBRX, cornerTRX};
+        int[] yCoords = {cornerBLY, cornerTLY, cornerBRY, cornerTRY};
 
-        int[][] resultMatrix = new int[cornerBRY - cornerTLY][cornerTRX - cornerBLX];
+        Arrays.sort(xCoords);
+        Arrays.sort(yCoords);
+
+        int xOffset = -xCoords[0];
+        int yOffset = -yCoords[0];
+
+        int width = xCoords[3] - xCoords[0];
+        int height = yCoords[3] - yCoords[0];
+
+        int[][] resultMatrix = new int[height][width];
 
         for (int x = 0; x < matrix[0].length; x++) {
             for (int y = 0; y < matrix.length; y++) {
@@ -276,6 +292,7 @@ class ImageEditor {
                 int updatedY = rotateCoordinate(x, y, sinAngle, cosAngle)[1];
 
                 updatedX += xOffset;
+                updatedY += yOffset;
 
                 if (updatedX < 0 || updatedX >= resultMatrix[0].length || updatedY < 0 || updatedY >= resultMatrix.length) {
                     continue;
