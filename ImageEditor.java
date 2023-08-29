@@ -241,6 +241,53 @@ class ImageEditor {
         return resultMatrix;
     }
 
+    static int[] rotateCoordinate(int x, int y, double sinAngle, double cosAngle) {
+        int updatedX = (int) ((x * cosAngle) - (y * sinAngle));
+        int updatedY = (int) ((y * cosAngle) + (x * sinAngle));
+
+        int[] coords = {updatedX, updatedY};
+
+        return coords;
+    }
+
+    static int[][] rotateMatrix(int[][] matrix, int angle) {
+        double sinAngle = Math.sin(angle * Math.PI / 180);
+        double cosAngle = Math.cos(angle * Math.PI / 180);
+
+        int cornerTLX = rotateCoordinate(0, 0, sinAngle, cosAngle)[0];
+        int cornerTLY = rotateCoordinate(0, 0, sinAngle, cosAngle)[1];
+
+        int cornerTRX = rotateCoordinate(matrix[0].length - 1, 0, sinAngle, cosAngle)[0];
+        int cornerTRY = rotateCoordinate(matrix[0].length - 1, 0, sinAngle, cosAngle)[1];
+
+        int cornerBLX = rotateCoordinate(0, matrix.length - 1, sinAngle, cosAngle)[0];
+        int cornerBLY = rotateCoordinate(0, matrix.length - 1, sinAngle, cosAngle)[1];
+
+        int cornerBRX = rotateCoordinate(matrix[0].length - 1, matrix.length - 1, sinAngle, cosAngle)[0];
+        int cornerBRY = rotateCoordinate(matrix[0].length - 1, matrix.length - 1, sinAngle, cosAngle)[1];
+
+        int xOffset = -cornerBLX;
+
+        int[][] resultMatrix = new int[cornerBRY - cornerTLY][cornerTRX - cornerBLX];
+
+        for (int x = 0; x < matrix[0].length; x++) {
+            for (int y = 0; y < matrix.length; y++) {
+                int updatedX = rotateCoordinate(x, y, sinAngle, cosAngle)[0];
+                int updatedY = rotateCoordinate(x, y, sinAngle, cosAngle)[1];
+
+                updatedX += xOffset;
+
+                if (updatedX < 0 || updatedX >= resultMatrix[0].length || updatedY < 0 || updatedY >= resultMatrix.length) {
+                    continue;
+                }
+
+                resultMatrix[updatedY][updatedX] = matrix[y][x];
+            }
+        }
+
+        return resultMatrix;
+    }
+
     static int[][] binaryColorMatrix(int[][] matrix, double tolerance) {
         int[][] resultMatrix = new int[matrix.length][matrix[0].length];
 
@@ -489,6 +536,7 @@ class ImageEditor {
                 System.out.println("(11)\tColor Inversion");
                 System.out.println("(12)\tEdge Detection");
                 System.out.println("(13)\tSketch");
+                System.out.println("(14)\tRotate");
 
                 System.out.println();
                 System.out.print("Option: ");
@@ -584,16 +632,13 @@ class ImageEditor {
 
                         break;
                     case 13:
-                        // System.out.print("Stroke Amount(in pixels): ");
-                        // int stroke = sc.nextInt();
-                        // sc.nextLine();
+                        System.out.print("Stroke Amount(in pixels, recommended 2px): ");
+                        int stroke = sc.nextInt();
+                        sc.nextLine();
 
-                        // System.out.print("Tolerance Amount(in 0.0 -> 1.0 range): ");
-                        // double tolerance = sc.nextDouble();
-                        // sc.nextLine();
-
-                        int stroke = 2;
-                        double tolerance = 0.97;
+                        System.out.print("Tolerance Amount(in 0.0 -> 1.0 range, recommended 0.97): ");
+                        double tolerance = sc.nextDouble();
+                        sc.nextLine();
 
                         buffImage = grayscale(buffImage);
                         
@@ -602,6 +647,15 @@ class ImageEditor {
                         imageMatrix = binaryColorMatrix(imageMatrix, tolerance);
                         imageMatrix = colorInverseMatrix(imageMatrix);
 
+                        ImageIO.write(matrixToBufferedImage(imageMatrix), "jpg", outputFile);
+
+                        break;
+                    case 14:
+                        System.out.print("Angle(in degrees): ");
+                        int angle = sc.nextInt();
+                        sc.nextLine();
+
+                        imageMatrix = rotateMatrix(imageMatrix, angle);
                         ImageIO.write(matrixToBufferedImage(imageMatrix), "jpg", outputFile);
 
                         break;
